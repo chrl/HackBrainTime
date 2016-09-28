@@ -1,47 +1,66 @@
 <?php
 
+	namespace ArcheeNic\HackBrainTime;
+
 	/**
 	 * Class secure
-	 * Отлов возможных атак
+	 * @RU Отлов возможных атак
+	 * @EN Catches and logs info about POST/GET/FILES in different log-files
 	 */
-	class Secure{
+	class Secure {
 		/**
-		 * тип атаки (определяется через метод setAttackType)
+		 * @RU тип атаки (определяется через метод setAttackType)
+		 * @EN Attack Type
+		 * @see Secure::setAttackType()
+		 *
 		 * @var string
 		 */
 		protected $attackType='unidentified';
 		/**
-		 * Конечная часть названия файла.
+		 * @RU Конечная часть названия файла
+		 * @EN Extension of the log file name
+		 *
 		 * @var string
 		 */
 		protected $postfix='.log';
 		/**
-		 * Абсолютный путь до места сохранения логов
+		 * @RU Абсолютный путь до места сохранения логов
+		 * @EN Absolute (or not) path for log storage
+		 *
+		 * @TODO Not only absolute path can be used here
 		 * @var string
 		 */
 		protected $absPath='';
 		/**
-		 * Типы отлавливаемых входящих данных get,post,file
+		 * @RU Типы отлавливаемых входящих данных get,post,file
+		 * @EN Types of data, that is caught and logged
+		 *
 		 * @var string
 		 */
 		protected $dataTypes='';
-
 		/**
-		 * secure constructor.
 		 *
-		 * @param string $dataTypes Типы отлавливаемых входящих данных get,post,file
-		 * @param string $absPath Абсолютный путь до места сохранения логов
-		 * @param string $postfix Конечная часть названия файла
+		 * @RU Class constructor
+		 * @EN Конструктор класса
+		 *
+		 * @param string $dataTypes Types of incoming data that are caught
+		 * @param string $absPath Absolute path for log storage
+		 * @param string $postfix Extension of log file
 		 */
 		function __construct($dataTypes='get,post,files',$absPath='',$postfix='.log'){
 			$this->setVars($dataTypes,$absPath,$postfix);
 			$this->fireTrigger();
+			return $this; // make it chainable
 		}
 
-		//region Простые операции по назначению атрибутов классов
+		/**  @region Simple setters / Простые операции по назначению атрибутов классов */
+
 		/**
-		 * Назначение абсолютного пути до места сохранения логов
+		 * @RU Назначение абсолютного пути до места сохранения логов
+		 * @EN $absPath setter
+		 *
 		 * @param $absPath
+		 * @return Secure
 		 */
 		protected function setPath($absPath){
 			if(!$absPath){
@@ -50,10 +69,13 @@
 			$absPath=trim($absPath);
 			$absPath=rtrim($absPath,'/');
 			$this->absPath=$absPath;
+			return $this; // make it chainable
 		}
 
 		/**
-		 * Назначение атрибутов классов
+		 * @RU Назначение атрибутов классов
+		 * @EN Set all object properties
+		 *
 		 * @param $dataTypes
 		 * @param $absPath
 		 * @param $postfix
@@ -74,11 +96,14 @@
 			}
 			$this->postfix=$postfix;
 		}
-		//endregion
+		/**  @endregion */
 
-		//region Определение типа атаки
+		/**  @region Resolve possible attack type / Определение типа атаки */
+
 		/**
-		 * Есть ли попвытка пролезть через админку
+		 * @RU Есть ли попытка пролезть через админку
+		 * @EN User tries to use admin-part of WP
+		 *
 		 * @return bool
 		 */
 		protected function _attackType_wpadmin(){
@@ -87,7 +112,9 @@
 		}
 
 		/**
-		 * Есть ли попытка пролезть через главную страницу
+		 * @RU Есть ли попытка пролезть через главную страницу
+		 * @EN User tries to use index.php of WP
+		 *
 		 * @return bool
 		 */
 		protected function _attackType_index(){
@@ -96,7 +123,8 @@
 		}
 
 		/**
-		 * Назначение типа
+		 * @RU Назначение типа
+		 * @EN Defines attack type
 		 */
 		protected function setAttackType(){
 			if($this->_attackType_wpadmin()){
@@ -104,14 +132,17 @@
 			}elseif($this->_attackType_index()){
 				$this->attackType='index';
 			}
+			return $this; // Make it chainable
 		}
-		//endregion
+		/**  @endregion */
 
-		//region Работа с файлом и мсодержимым лога
+		/**  @region File operation and log contents methods / Работа с файлом и содержимым лога */
+
 		/**
-		 * Формирование строки лога
-		 * @param string $separator
+		 * @RU Формирование строки лога
+		 * @EN Create a line of log
 		 *
+		 * @param string $separator Divider used to separate data fields
 		 * @return string
 		 */
 		protected function logString($separator="\t"){
@@ -127,16 +158,23 @@
 		}
 
 		/**
-		 * Сохранение лога
+		 * @RU Сохранение лога
+		 * @EN Save generated line to log
+		 *
+		 * @return Secure
 		 */
 		protected function saveLog(){
 			$file=$this->absPath.'/'.$this->attackType.$this->postfix;
 			file_put_contents($file,$this->logString()."\r\n",FILE_APPEND);
+			return $this;
 		}
-		//endregion
+		/** endregion */
 
 		/**
-		 * Вызвать событие по типу входящих данных
+		 * @RU Вызвать событие по типу входящих данных
+		 * @EN Trigger action depending on datatype
+		 *
+		 * @return Secure
 		 */
 		protected function fireTrigger(){
 			// TODO: Не гуд что повторы. Можно оптимизировать. Не тратил время на обдумывание
@@ -147,5 +185,7 @@
 			}elseif(in_array('post',$this->dataTypes)&&!empty($_POST)){
 				$this->saveLog();
 			}
+
+			return $this;
 		}
 	}

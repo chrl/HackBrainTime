@@ -4,4 +4,4 @@
 Библиотеки за час
 
 #####[EN by Google Translate]
-hour Library
+Libraries written within one hour
