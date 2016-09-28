@@ -69,7 +69,7 @@
 			$this->dataTypes=explode(',',$dataTypes);
 			if(!$dataTypes){
 				// TODO: Лучше потом переделать в исключение
-				print 'undefined var $postfix';
+				print 'undefined var $dataTypes';
 				exit;
 			}
 			$this->postfix=$postfix;
@@ -149,5 +149,3 @@
 			}
 		}
 	}
-
-	new Secure('post,files');
