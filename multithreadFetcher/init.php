@@ -5,15 +5,6 @@
 		 * @var string if set status "stop" - daemon break;
 		 */
 		protected $status='';
-		/**
-		 * External libs array (dependency injection adapter)
-		 * @var array
-		 */
-		protected $libs;
-		public function __construct($libs=array()){
-			$this->libs=$libs;
-			set_time_limit(0);
-		}
 		abstract protected function _inner();
 		abstract protected function _beforeStart();
 		abstract protected function _afterStop();
@@ -27,6 +18,7 @@
 			}
 		}
 		public function start(){
+			set_time_limit(0);
 			$this->status='start';
 			$this->_beforeStart();
 			$this->process();
