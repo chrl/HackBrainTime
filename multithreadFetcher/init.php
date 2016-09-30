@@ -11,7 +11,7 @@
 		 */
 		protected $libs;
 		public function __construct($libs=array()){
-			$this->libs;
+			$this->libs=$libs;
 			set_time_limit(0);
 		}
 		abstract protected function _inner();
