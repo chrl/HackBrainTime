@@ -1,151 +1,205 @@
 <?php
 
-	/**
-	 * Class secure
-	 * Отлов возможных атак
-	 */
-	class Secure{
-		/**
-		 * тип атаки (определяется через метод setAttackType)
-		 * @var string
-		 */
-		protected $attackType='unidentified';
-		/**
-		 * Конечная часть названия файла.
-		 * @var string
-		 */
-		protected $postfix='.log';
-		/**
-		 * Абсолютный путь до места сохранения логов
-		 * @var string
-		 */
-		protected $absPath='';
-		/**
-		 * Типы отлавливаемых входящих данных get,post,file
-		 * @var string
-		 */
-		protected $dataTypes='';
+namespace ArcheeNic\HackBrainTime;
 
-		/**
-		 * secure constructor.
-		 *
-		 * @param string $dataTypes Типы отлавливаемых входящих данных get,post,file
-		 * @param string $absPath Абсолютный путь до места сохранения логов
-		 * @param string $postfix Конечная часть названия файла
-		 */
-		function __construct($dataTypes='get,post,files',$absPath='',$postfix='.log'){
-			$this->setVars($dataTypes,$absPath,$postfix);
-			$this->fireTrigger();
-		}
+/**
+ * Class secure
+ * @RU Отлов возможных атак
+ * @EN Catches and logs info about POST/GET/FILES in different log-files
+ */
+class Secure
+{
+    /**
+     * @RU тип атаки (определяется через метод setAttackType)
+     * @EN Attack Type
+     * @see Secure::setAttackType()
+     *
+     * @var string
+     */
+    protected $attackType='unidentified';
+    /**
+     * @RU Конечная часть названия файла
+     * @EN Extension of the log file name
+     *
+     * @var string
+     */
+    protected $postfix='.log';
+    /**
+     * @RU Абсолютный путь до места сохранения логов
+     * @EN Absolute (or not) path for log storage
+     *
+     * @TODO Not only absolute path can be used here
+     * @var string
+     */
+    protected $absPath='';
+    /**
+     * @RU Типы отлавливаемых входящих данных get,post,file
+     * @EN Types of data, that is caught and logged
+     *
+     * @var string
+     */
+    protected $dataTypes='';
+    /**
+     *
+     * @RU Class constructor
+     * @EN Конструктор класса
+     *
+     * @param string $dataTypes Types of incoming data that are caught
+     * @param string $absPath Absolute path for log storage
+     * @param string $postfix Extension of log file
+     */
+    public function __construct($dataTypes = 'get,post,files', $absPath = '', $postfix = '.log')
+    {
+        $this->setVars($dataTypes, $absPath, $postfix);
+        $this->fireTrigger();
+        return $this; // make it chainable
+    }
 
-		//region Простые операции по назначению атрибутов классов
-		/**
-		 * Назначение абсолютного пути до места сохранения логов
-		 * @param $absPath
-		 */
-		protected function setPath($absPath){
-			if(!$absPath){
-				$absPath=__DIR__;
-			}
-			$absPath=trim($absPath);
-			$absPath=rtrim($absPath,'/');
-			$this->absPath=$absPath;
-		}
+    /**  @region Simple setters /
+     *           Простые операции по назначению атрибутов классов
+     */
 
-		/**
-		 * Назначение атрибутов классов
-		 * @param $dataTypes
-		 * @param $absPath
-		 * @param $postfix
-		 */
-		protected function setVars($dataTypes,$absPath,$postfix){
-			$this->setPath($absPath);
-			$this->setAttackType();
-			if(!$dataTypes){
-				// TODO: Лучше потом переделать в исключение
-				print 'undefined var $types';
-				exit;
-			}
-			$this->dataTypes=explode(',',$dataTypes);
-			if(!$dataTypes){
-				// TODO: Лучше потом переделать в исключение
-				print 'undefined var $dataTypes';
-				exit;
-			}
-			$this->postfix=$postfix;
-		}
-		//endregion
+    /**
+     * @RU Назначение абсолютного пути до места сохранения логов
+     * @EN $absPath setter
+     *
+     * @param $absPath
+     * @return Secure
+     */
+    protected function setPath($absPath)
+    {
+        if (!$absPath) {
+            $absPath=__DIR__;
+        }
+        $absPath=trim($absPath);
+        $absPath=rtrim($absPath, '/');
+        $this->absPath=$absPath;
+        return $this; // make it chainable
+    }
 
-		//region Определение типа атаки
-		/**
-		 * Есть ли попвытка пролезть через админку
-		 * @return bool
-		 */
-		protected function _attackType_wpadmin(){
-			$request=$_SERVER['REQUEST_URI'];
-			return (strpos('wp_admin',$request)!==false);
-		}
+    /**
+     * @RU Назначение атрибутов классов
+     * @EN Set all object properties
+     *
+     * @param $dataTypes
+     * @param $absPath
+     * @param $postfix
+     */
+    protected function setVars($dataTypes, $absPath, $postfix)
+    {
+        $this->setPath($absPath);
+        $this->setAttackType();
+        if (!$dataTypes) {
+            // TODO: Лучше потом переделать в исключение
+            print 'undefined var $types';
+            exit;
+        }
+        $this->dataTypes=explode(',', $dataTypes);
+        if (!$dataTypes) {
+            // TODO: Лучше потом переделать в исключение
+            print 'undefined var $dataTypes';
+            exit;
+        }
+        $this->postfix=$postfix;
+    }
+    /**  @endregion */
 
-		/**
-		 * Есть ли попытка пролезть через главную страницу
-		 * @return bool
-		 */
-		protected function _attackType_index(){
-			$request=$_SERVER['REQUEST_URI'];
-			return (strpos('index.php',$request)!==false);
-		}
+    /**  @region Resolve possible attack type / Определение типа атаки */
 
-		/**
-		 * Назначение типа
-		 */
-		protected function setAttackType(){
-			if($this->_attackType_wpadmin()){
-				$this->attackType='wpadmin';
-			}elseif($this->_attackType_index()){
-				$this->attackType='index';
-			}
-		}
-		//endregion
+    /**
+     * @RU Есть ли попытка пролезть через админку
+     * @EN User tries to use admin-part of WP
+     *
+     * @return bool
+     */
+    protected function attackTypeWpadmin()
+    {
+        $request=$_SERVER['REQUEST_URI'];
+        return (strpos('wp_admin', $request)!==false);
+    }
 
-		//region Работа с файлом и мсодержимым лога
-		/**
-		 * Формирование строки лога
-		 * @param string $separator
-		 *
-		 * @return string
-		 */
-		protected function logString($separator="\t"){
-			$data=array();
-			$data[]=time();
-			$data[]='POST';
-			$data[]=json_encode($_POST);
-			$data[]='GET';
-			$data[]=json_encode($_GET);
-			$data[]='PHPSELF';
-			$data[]=$_SERVER ['PHP_SELF'];
-			return implode($separator,$data);
-		}
+    /**
+     * @RU Есть ли попытка пролезть через главную страницу
+     * @EN User tries to use index.php of WP
+     *
+     * @return bool
+     */
+    protected function attackTypeIndex()
+    {
+        $request=$_SERVER['REQUEST_URI'];
+        return (strpos('index.php', $request)!==false);
+    }
 
-		/**
-		 * Сохранение лога
-		 */
-		protected function saveLog(){
-			$file=$this->absPath.'/'.$this->attackType.$this->postfix;
-			file_put_contents($file,$this->logString()."\r\n",FILE_APPEND);
-		}
-		//endregion
+    /**
+     * @RU Назначение типа
+     * @EN Defines attack type
+     */
+    protected function setAttackType()
+    {
+        if ($this->attackTypeWpadmin()) {
+            $this->attackType='wpadmin';
+        } elseif ($this->attackTypeIndex()) {
+            $this->attackType='index';
+        }
+        return $this; // Make it chainable
+    }
+    /**  @endregion */
 
-		/**
-		 * Вызвать событие по типу входящих данных
-		 */
-		protected function fireTrigger(){
-			// TODO: Не гуд что повторы. Можно оптимизировать. Не тратил время на обдумывание
-			if(in_array('get',$this->dataTypes)&&!empty($_GET)){
-				$this->saveLog();
-			}elseif(in_array('files',$this->dataTypes)&&!empty($_FILES)){
-				$this->saveLog();
-			}elseif(in_array('post',$this->dataTypes)&&!empty($_POST)){
-				$this->saveLog();
-			}
-		}
-	}
+    /**  @region File operation and log contents methods
+     *           Работа с файлом и содержимым лога
+     */
+
+    /**
+     * @RU Формирование строки лога
+     * @EN Create a line of log
+     *
+     * @param string $separator Divider used to separate data fields
+     * @return string
+     */
+    protected function logString($separator = "\t")
+    {
+        $data=array();
+        $data[]=time();
+        $data[]='POST';
+        $data[]=json_encode($_POST);
+        $data[]='GET';
+        $data[]=json_encode($_GET);
+        $data[]='PHPSELF';
+        $data[]=$_SERVER ['PHP_SELF'];
+        return implode($separator, $data);
+    }
+
+    /**
+     * @RU Сохранение лога
+     * @EN Save generated line to log
+     *
+     * @return Secure
+     */
+    protected function saveLog()
+    {
+        $file=$this->absPath.'/'.$this->attackType.$this->postfix;
+        file_put_contents($file, $this->logString()."\r\n", FILE_APPEND);
+        return $this;
+    }
+    /** endregion */
+
+    /**
+     * @RU Вызвать событие по типу входящих данных
+     * @EN Trigger action depending on datatype
+     *
+     * @return Secure
+     */
+    protected function fireTrigger()
+    {
+        // TODO: Eliminate repeats in code
+        if (in_array('get', $this->dataTypes)&&!empty($_GET)) {
+            $this->saveLog();
+        } elseif (in_array('files', $this->dataTypes)&&!empty($_FILES)) {
+            $this->saveLog();
+        } elseif (in_array('post', $this->dataTypes)&&!empty($_POST)) {
+            $this->saveLog();
+        }
+
+        return $this;
+    }
+}
