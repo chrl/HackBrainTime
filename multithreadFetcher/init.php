@@ -19,7 +19,10 @@
 		abstract protected function _afterStop();
 		protected function process(){
 			while(true == true){
-				if($this->status=='stop'){break;}
+				if($this->status=='stop'){
+					$this->_afterStop();
+					break;
+				}
 				$this->_inner();
 			}
 		}
